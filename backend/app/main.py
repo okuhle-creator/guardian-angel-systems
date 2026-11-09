@@ -26,14 +26,17 @@ from app.api.scenarios import router as scenarios_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure database schema is created
-    Base.metadata.create_all(bind=engine)
-    
-    # Initialize default users and threat intel seed
-    db = SessionLocal()
     try:
-        ScenarioService.seed_threat_intel_and_users(db)
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            ScenarioService.seed_threat_intel_and_users(db)
+        finally:
+            db.close()
+        print("[GAS Startup] Database schema initialized and seed records verified.")
+    except Exception as e:
+        print(f"[GAS Startup WARNING] Database connection issue during initialization: {e}")
+        print("[GAS Startup WARNING] Application will continue running. Please verify your DATABASE_URL in Render environment settings.")
     yield
 
 app = FastAPI(
